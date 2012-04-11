@@ -1,9 +1,16 @@
 #! /usr/bin/env python
 # coding=utf-8
         
+"""
+Find the best gamma and cost combination for svm
+"""
+
 import sys
 import os
 from subprocess import *
+from pygene.gene import FloatGene, FloatGeneMax
+from pygene.organism import Organism, MendelOrganism
+from pygene.population import Population
 
 if len(sys.argv) <= 1:
   print('Usage: {0} training_file [testing_file]'.format(sys.argv[0]))
@@ -42,13 +49,6 @@ cmd = '{0} -s "{1}" "{2}" > "{3}"'.format(svmscale_exe, range_file, train_pathna
 print('Scaling training data...')
 Popen(cmd, shell = True, stdout = PIPE).communicate()
 
-"""
-Find the best gamma and cost combination for svm
-"""
-
-from pygene.gene import FloatGene, FloatGeneMax
-from pygene.organism import Organism, MendelOrganism
-from pygene.population import Population
 
 class CostExpGene(FloatGene):
     """
@@ -113,11 +113,27 @@ class CostGammaExpPopulation(Population):
     initPopulation = 10
     species = CostGammaExpOrganism
 
+def trainPredict(cost, gamma):
+    cmd = '{0} -c {1} -g {2} "{3}" "{4}"'.format(svmtrain_exe,cost,gamma,scaled_file,model_file)
+    print('Training...')
+    Popen(cmd, shell = True, stdout = PIPE).communicate()
 
-pop = CostGammaExpPopulation()
-targetFitness = 0.001
+    print('Output model: {0}'.format(model_file))
+    if len(sys.argv) > 2:
+        cmd = '{0} -r "{1}" "{2}" > "{3}"'.format(svmscale_exe, range_file, test_pathname, scaled_test_file)
+	print('Scaling testing data...')
+	Popen(cmd, shell = True, stdout = PIPE).communicate()	
+
+	cmd = '{0} "{1}" "{2}" "{3}"'.format(svmpredict_exe, scaled_test_file, model_file, predict_test_file)
+	print('Testing...')
+	Popen(cmd, shell = True).communicate()	
+
+	print('Output prediction: {0}'.format(predict_test_file))
+
 
 def main():
+    pop = CostGammaExpPopulation()
+    targetFitness = 0.001
     i = 1
     try:
         print "This is your chance to play God."
@@ -126,13 +142,20 @@ def main():
             b = pop.best()
             print b
             if (b.fitness() <= targetFitness):
+                cost = 2.0**b['costExp']
+                gamma = 2.0**b['gammaExp']
+                trainPredict(cost, gamma)
                 break
             i += 1
             pop.gen()
     except KeyboardInterrupt:
         print "current status: "
         print b
+        cost = 2.0**b['costExp']
+        gamma = 2.0**b['gammaExp']
+        trainPredict(cost, gamma)
 
         
 if __name__ == '__main__':
-    main()        
+    main()
+    
