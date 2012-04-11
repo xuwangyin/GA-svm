@@ -1,0 +1,6 @@
+使用libsvm和遗传算法优化支持向量机的cost和gamma参数
+======================
+Windows平台使用方法
+    1. 安装Python
+    2. 使用命令提示符进入PyGene目录
+    3. 运行命令"python start_evolution.py sample_training_data.txt sample_test_data.txt"
