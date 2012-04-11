@@ -1,6 +1,0 @@
-
-pygene was written by David McNab <david@freenet.org.nz>
-
-Small changes by Tomasz bla Fortuna were introduced to improve performance,
-allow parallel fitness processing and read genome from config file.
-<bla |at| thera |dot| be>.
