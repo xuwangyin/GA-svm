@@ -8,6 +8,8 @@ Find the best gamma and cost combination for svm
 import sys
 import os
 from subprocess import *
+import sys
+sys.path.append('../')
 from pygene.gene import FloatGene, FloatGeneMax
 from pygene.organism import Organism, MendelOrganism
 from pygene.population import Population
@@ -18,9 +20,9 @@ if len(sys.argv) <= 1:
 
 is_win32 = (sys.platform == 'win32')
 if not is_win32:
-	svmscale_exe = "../svm-scale"
-	svmtrain_exe = "../svm-train"
-	svmpredict_exe = "../svm-predict"
+	svmscale_exe = "../linux/svm-scale"
+	svmtrain_exe = "../linux/svm-train"
+	svmpredict_exe = "../linux/svm-predict"
 else:
         # example for windows
 	svmscale_exe = r"..\windows\svm-scale.exe"
