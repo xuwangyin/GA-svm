@@ -90,7 +90,7 @@ class CostGammaExpOrganism(Organism):
         """
         Implements the 'fitness function' for this species.
         """
-        #调用svm-train计算交叉 Mean Squared Error
+        #调用svm-train计算交叉验证Mean Squared Error(MSE)
         cost = 2.0**self['costExp']
         gamma = 2.0**self['gammaExp']
 
@@ -101,7 +101,7 @@ class CostGammaExpOrganism(Organism):
             if str(line).find("Mean") != -1:
                 cross_mse = float(line.split()[-1])
 
-        # 个体的fitness越小, 适应性越好, 交叉验证率越高
+        # 交叉验正的MSE越小, 个体的fitness越小, 适应性越好
         fitness = cross_mse
         return fitness
 
