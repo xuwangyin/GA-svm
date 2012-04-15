@@ -7,6 +7,8 @@ Find the best gamma and cost combination for svm
 
 import sys
 import os
+import re
+import ConfigParser
 from subprocess import *
 import sys
 sys.path.append('../')
@@ -51,6 +53,42 @@ cmd = '{0} -s "{1}" "{2}" > "{3}"'.format(svmscale_exe, range_file, train_pathna
 print('Scaling training data...')
 Popen(cmd, shell = True, stdout = PIPE).communicate()
 
+class svm_params:
+    def __init__(self, ini_file):
+        assert os.path.exists(ini_file)
+        """load config from ini file"""
+        # ConfigParser.RawConfigParser.OPTCRE = re.compile(r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
+        self.CONFIG = ConfigParser.ConfigParser()
+
+        self.CONFIG.read(ini_file)
+        self.svm_type              = self.CONFIG.getint('svm_params', 'svm_type')
+        self.kernel_type           = self.CONFIG.getint('svm_params', 'kernel_type')
+        self.degree                = self.CONFIG.getint('svm_params', 'degree')
+        self.coef0                 = self.CONFIG.getfloat('svm_params', 'coef0')
+        self.nu                    = self.CONFIG.getfloat('svm_params', 'nu')
+        self.epsion                = self.CONFIG.getfloat('svm_params', 'epsion')
+        self.cachesize             = self.CONFIG.getint('svm_params', 'cachesize')
+        self.epsilon               = self.CONFIG.getfloat('svm_params', 'epsilon')
+        self.shrinking             = self.CONFIG.getint('svm_params', 'shrinking')
+        self.probability_estimates = self.CONFIG.getint('svm_params', 'probability_estimates')
+        self.weight                = self.CONFIG.getint('svm_params', 'weight')
+        self.fold                  = self.CONFIG.getint('svm_params', 'fold')
+    def __repr__(self):
+        cmd = '-s {0} -t {1} -d {2} -r {3} -n {4} -p {5} -m {6} -e {7} -h {8} -b {9} -wi {10} -v {11}'.format(
+        self.svm_type              ,
+        self.kernel_type           ,
+        self.degree                ,
+        self.coef0                 ,
+        self.nu                    ,
+        self.epsion                ,
+        self.cachesize             ,
+        self.epsilon               ,
+        self.shrinking             ,
+        self.probability_estimates ,
+        self.weight                ,
+        self.fold
+        )
+        return cmd
 
 class CostExpGene(FloatGene):
     """
@@ -81,11 +119,11 @@ class GammaExpGene(FloatGene):
     # degree of mutation
     mutAmt = 1
 
+additional_params = svm_params('start_evolution.ini')
 
 class CostGammaExpOrganism(Organism):
     genome = {'costExp':CostExpGene, 'gammaExp':GammaExpGene}
-    fold = 5
-    svm_params = '-s 3 -p 0.1 -t 2'
+    svm_params = str(additional_params)
     def fitness(self):
         """
         Implements the 'fitness function' for this species.
@@ -94,8 +132,8 @@ class CostGammaExpOrganism(Organism):
         cost = 2.0**self['costExp']
         gamma = 2.0**self['gammaExp']
 
-        cmd = '{0} -c {1} -g {2} -v {3} {4} {5}'.format \
-          (svmtrain_exe,cost,gamma,self.fold,self.svm_params,scaled_file)
+        cmd = '{0} -c {1} -g {2} {3} {4}'.format \
+          (svmtrain_exe,cost,gamma,self.svm_params,scaled_file)
         f = Popen(cmd, shell = True, stdout = PIPE).stdout
         for line in f.readlines():
             if str(line).find("Mean") != -1:
@@ -115,11 +153,8 @@ class CostGammaExpPopulation(Population):
     initPopulation = 10
     species = CostGammaExpOrganism
 
-def trainPredict(cost, gamma):
-    #TODO use svm_params from CostGammaExpOrganism
-    svm_params = '-s 3 -p 0.1 -t 2'
+def trainPredict(cost, gamma, svm_params):
     cmd = '{0} -c {1} -g {2} {3} "{4}" "{5}"'.format(svmtrain_exe,cost,gamma,svm_params,scaled_file,model_file)
-    print cmd
     print('Training...')
     Popen(cmd, shell = True, stdout = PIPE).communicate()
 
@@ -149,7 +184,7 @@ def main():
             if (b.fitness() <= targetFitness):
                 cost = 2.0**b['costExp']
                 gamma = 2.0**b['gammaExp']
-                trainPredict(cost, gamma)
+                trainPredict(cost, gamma, b.svm_params)
                 break
             i += 1
             pop.gen()
@@ -158,7 +193,7 @@ def main():
         print b
         cost = 2.0**b['costExp']
         gamma = 2.0**b['gammaExp']
-        trainPredict(cost, gamma)
+        trainPredict(cost, gamma, b.svm_params)
 
         
 if __name__ == '__main__':
